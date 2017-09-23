@@ -10,6 +10,8 @@ Travel Bot will help you find the best place to relax. For example, you can ente
 | top           | Display top proposals |
 | %money%       | Display proposals for which there is enough money |
 | %tag%         | Display proposals for tag |
+| %city%         | Display proposals for city you want to visit |
+| %dd.mm-dd.mm%         | Display proposals for date |
 | ...        | ... |
 
 ## Technologies
