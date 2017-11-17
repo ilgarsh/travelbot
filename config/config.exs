@@ -1,7 +1,7 @@
 use Mix.Config
 
 config :app,
-  bot_name: ""
+  bot_name: "travel_ai_bot"
 
 config :nadia,
   token: ""
