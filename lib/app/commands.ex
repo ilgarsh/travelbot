@@ -140,11 +140,9 @@ defmodule App.Commands do
     ]
   end
 
-  # The `message` macro must come at the end since it matches anything.
-  # You may use it as a fallback.
-  message do
-    Logger.log :warn, "Did not match the message"
+  message(text) do
+    Logger.log :info, "Matched message \"" <> text <> "\""
 
-    send_message "Sorry, I couldn't understand you"
+    send_message text
   end
 end
