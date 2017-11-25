@@ -30,6 +30,18 @@ defmodule App.Router do
     end
   end
 
+  def generate_message_matcher(message, handler) do
+    quote do
+      def do_match_message(%{
+        message: %{
+          text: unquote(message)
+        }
+      } = var!(update)) do
+        handle_message unquote(handler), unquote(message)
+      end
+    end
+  end
+
   defp generate_command(command, handler) do
     quote do
       def do_match_message(%{
@@ -122,6 +134,10 @@ defmodule App.Router do
 
   defmacro message(do: function) do
     generate_message_matcher(function)
+  end
+
+  defmacro message(message, do: function) do
+    generate_message_matcher(message, function)
   end
 
   defmacro message(module, function) do
@@ -230,6 +246,13 @@ defmodule App.Router do
   when is_function(function) do
     Task.async fn ->
       function
+    end
+  end
+
+  def handle_message(function, message)
+  when is_function(function) and is_binary(message) do
+    Task.async fn ->
+      function.(message)
     end
   end
 
