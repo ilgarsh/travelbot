@@ -4,8 +4,8 @@ defmodule App.Mixfile do
   def project do
     [app: :app,
      version: "0.1.0",
-     elixir: "~> 1.3",
-     default_task: "server",
+     elixir: "~> 1.5",
+     #default_task: "server",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      deps: deps,
@@ -13,13 +13,15 @@ defmodule App.Mixfile do
   end
 
   def application do
-    [applications: [:logger, :nadia],
-     mod: {App, []}]
+    [applications: [:logger, :nadia]]
+     #mod: {App, []}]
   end
 
   defp deps do
     [{:nadia, "~> 0.4.1"},
-      {:distillery, "~> 1.5", runtime: false}]
+      {:distillery, "~> 1.5", runtime: false},
+      {:httpoison, "~> 0.13"},
+      {:poison, "~> 3.1"}]
   end
 
   defp aliases do
