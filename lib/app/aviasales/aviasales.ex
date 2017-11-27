@@ -10,7 +10,7 @@ defmodule Aviasales do
       <> if(destination != "", do: "destination=" <> destination <> "&", else: "")
       <> if(beginning_of_period != "", do: "beginning_of_period=" <> beginning_of_period <> "&period_type=month&",
                                         else: "period_type=year&")
-      <> "limit=" <> limit  <> "&"
+      <> if(limit != "", do: "limit=" <> limit <> "&", else: "limit=10&")
       <> if(trip_duration != "", do: "trip_duration=" <> trip_duration <> "&", else: "")
       <> "token=" <> @token
   end
