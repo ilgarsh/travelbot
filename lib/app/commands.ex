@@ -2,6 +2,7 @@ defmodule App.Commands do
   use App.Router
   use App.Commander
 
+  require Grouper
   alias App.Commands.Outside
 
   # You can create commands in the format `/command` by
@@ -143,6 +144,15 @@ defmodule App.Commands do
   message(text) do
     Logger.log :info, "Matched message \"" <> text <> "\""
 
-    send_message text
+    cond do
+      Grouper.is_numeric(text) ->
+        send_message "Money"
+      Grouper.is_month(text) ->
+        send_message "Month"
+      Grouper.is_season(text) ->
+        send_message "Season"
+      true ->
+        send_message "poshel naher kozel"
+    end
   end
 end
