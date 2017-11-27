@@ -16,7 +16,7 @@ defmodule Aviasales do
   end
 
   def get_top_proposals(origin) do
-    {:ok, response} = build_url(origin, "", "", "10", "") |> HTTPoison.get
+    {:ok, response} = build_url(origin, "", "", "", "") |> HTTPoison.get
     Poison.decode!(response.body, as: %{"data" => [%Proposal{}]})["data"]
   end
 
@@ -27,12 +27,12 @@ defmodule Aviasales do
   end
 
   def get_proposals_to(origin, destination) do
-    {:ok, response} = build_url(origin, destination, "", "10", "") |> HTTPoison.get
+    {:ok, response} = build_url(origin, destination, "", "", "") |> HTTPoison.get
     Poison.decode!(response.body, as: %{"data" => [%Proposal{}]})["data"]
   end
 
   def get_proposals_in(origin, month) do
-    {:ok, response} = build_url(origin, "", "2017-" <> month <> "-01", "10", "") |> HTTPoison.get
+    {:ok, response} = build_url(origin, "", "2017-" <> month <> "-01", "1", "") |> HTTPoison.get
     Poison.decode!(response.body, as: %{"data" => [%Proposal{}]})["data"]
   end
 
