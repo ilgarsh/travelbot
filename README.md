@@ -14,7 +14,6 @@ Another feature of this bot will be a kind of recommender system. Once a day, ea
 | %tag%         | Display proposals for tag |
 | %city%         | Display proposals for city you want to visit |
 | %month%         | Display proposals for month |
-| %season%        | Display proposals for season (like winter, summer, etc) |
 | ...        | ... |
 
 ## Technologies
