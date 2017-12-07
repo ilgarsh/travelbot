@@ -149,8 +149,6 @@ defmodule App.Commands do
         send_message "Money"
       Grouper.is_month(text) ->
         send_message "Month"
-      Grouper.is_season(text) ->
-        send_message "Season"
       true ->
         send_message "poshel naher kozel"
     end

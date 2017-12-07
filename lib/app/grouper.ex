@@ -24,13 +24,4 @@ defmodule Grouper do
   	], str |> String.downcase)
   end
 
-  def is_season(str) do
-  	Enum.member?([
-  		"winter",
-  		"summer",
-  		"autumn",
-  		"spring"
-  	], str |> String.downcase)
-  end
-
 end
