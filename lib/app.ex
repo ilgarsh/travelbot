@@ -5,8 +5,10 @@ defmodule App do
     import Supervisor.Spec, warn: false
 
     children = [
+      worker(App.Cities, []),
+      worker(App.Dialog, []),
       worker(App.Poller, []),
-      worker(App.Matcher, [])
+      worker(App.Matcher, []),
     ]
 
     opts = [strategy: :one_for_one, name: App.Supervisor]

@@ -18,8 +18,13 @@ defmodule App.Mixfile do
   end
 
   defp deps do
-    [{:nadia, "~> 0.4.1"},
-      {:distillery, "~> 1.5", runtime: false}]
+    [
+      {:nadia, "~> 0.4.1"},
+      {:distillery, "~> 1.5", runtime: false},
+      {:httpotion, "~> 3.0.2"},
+      {:httpoison, "~> 0.13"},
+      {:poison, "~> 3.1"},
+    ]
   end
 
   defp aliases do

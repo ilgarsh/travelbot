@@ -143,14 +143,14 @@ defmodule App.Commands do
 
   message(text) do
     Logger.log :info, "Matched message \"" <> text <> "\""
-
-    cond do
-      Grouper.is_numeric(text) ->
-        send_message "Money"
-      Grouper.is_month(text) ->
-        send_message "Month"
-      true ->
-        send_message "poshel naher kozel"
-    end
+    send_message App.Cities.get_city_code(text)
+    # cond do
+    #   Grouper.is_numeric(text) ->
+    #     send_message "Money"
+    #   Grouper.is_month(text) ->
+    #     send_message "Month"
+    #   true ->
+    #     send_message "poshel naher kozel"
+    # end
   end
 end
