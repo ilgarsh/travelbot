@@ -17,23 +17,27 @@ defmodule Aviasales do
 
   def get_top_proposals(origin) do
     {:ok, response} = build_url(origin, "", "", "", "") |> HTTPoison.get
-    Poison.decode!(response.body, as: %{"data" => [%Proposal{}]})["data"]
+    Poison.decode!(response.body, as: %{"data" => [%Proposal{}]})["data"] |>
+    Enum.map(fn prop -> Proposal.build_aviasales_URL(prop) end)
   end
 
   def get_min_money_proposals(origin, money) do
     {:ok, response} = build_url(origin, "", "", "1000", "") |> HTTPoison.get
     Poison.decode!(response.body, as: %{"data" => [%Proposal{}]})["data"] |>
-    Enum.filter(fn prop -> prop.value < money end)
+    Enum.filter(fn prop -> prop.value < money end) |>
+    Enum.map(fn prop -> Proposal.build_aviasales_url(prop) end)
   end
 
   def get_proposals_to(origin, destination) do
     {:ok, response} = build_url(origin, destination, "", "", "") |> HTTPoison.get
-    Poison.decode!(response.body, as: %{"data" => [%Proposal{}]})["data"]
+    Poison.decode!(response.body, as: %{"data" => [%Proposal{}]})["data"] |>
+    Enum.map(fn prop -> Proposal.build_aviasales_url(prop) end)
   end
 
   def get_proposals_in(origin, month) do
     {:ok, response} = build_url(origin, "", "2017-" <> month <> "-01", "1", "") |> HTTPoison.get
-    Poison.decode!(response.body, as: %{"data" => [%Proposal{}]})["data"]
+    Poison.decode!(response.body, as: %{"data" => [%Proposal{}]})["data"] |>
+    Enum.map(fn prop -> Proposal.build_aviasales_url(prop) end)
   end
 
 end
