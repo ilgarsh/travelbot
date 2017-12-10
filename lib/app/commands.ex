@@ -22,6 +22,21 @@ defmodule App.Commands do
     send_message "Hello World!"
   end
 
+  command "start" do
+    Logger.log :info, "Command /start"
+    send_message "Hello! This is the Travel bot. I'll help you decide where to go.\nTell me, where are you?"
+    App.Dialog.add_user(update.message.from.id)
+    App.Dialog.set_dialog_progress(update.message.from.id, :city)
+  end
+
+  command "test" do
+    city_code = App.Dialog.get_user_city(update.message.from.id)
+    city = city_code |> App.Cities.get_city_name
+    proposals = city_code |> Aviasales.get_top_proposals
+    Enum.reduce(proposals, "", fn x, acc -> acc <> "From #{city} to #{App.Cities.get_city_name(x.destination)}\n#{x.depart_date} - #{x.return_date}\nTickets from #{x.value} RUB: #{x.url}\n\n" end)
+    |> send_message
+  end
+
   # You may split code to other modules using the syntax
   # "Module, :function" instead od "do..end"
   command "outside", Outside, :outside
@@ -142,8 +157,28 @@ defmodule App.Commands do
   end
 
   message(text) do
-    Logger.log :info, "Matched message \"" <> text <> "\""
-    send_message App.Cities.get_city_code(text)
+    user_id = update.message.from.id
+    Logger.log :info, "Matched message #{text}\nCurrent dialog progress for user #{user_id}: #{App.Dialog.get_user_progress(user_id)}"
+    
+    case App.Dialog.get_user_progress(user_id) do
+      :city -> App.Cities.get_city_code(text) 
+               |> (fn x -> 
+                    if is_nil(x) do
+                      send_message("There is no such city, try again")
+                    else
+                      App.Dialog.set_user_city(user_id, x)
+                      App.Dialog.set_dialog_progress(user_id, :price)
+                      send_message("Minimum price?")
+                    end
+                  end).()
+      :price -> if Grouper.is_numeric(text) do
+                  App.Dialog.set_user_price(user_id, text)
+                  App.Dialog.set_dialog_progress(user_id, :month)
+                  send_message("Month?")
+                else
+                  send_message("Incorrect price, try again")
+                end
+    end
     # cond do
     #   Grouper.is_numeric(text) ->
     #     send_message "Money"

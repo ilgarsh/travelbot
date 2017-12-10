@@ -8,8 +8,14 @@ defmodule App.Cities do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
-  def get_city_code(city) do
-  	GenServer.call(__MODULE__, city)
+  def get_city_code(city_name) do
+  	{:ok, code} = GenServer.call(__MODULE__, {:getcode, city_name})
+  	code
+  end
+
+  def get_city_name(city_code) do
+  	{:ok, name} = GenServer.call(__MODULE__, {:getname, city_code})
+  	name
   end
 
   ## Server
@@ -20,10 +26,20 @@ defmodule App.Cities do
     {:ok, cities}
   end
 
-  def handle_call(city, _from, cities) do
+  def handle_call({:getcode, city_name}, _from, cities) do
+    city = cities |> Enum.find(fn x -> String.downcase(x["name"]) == String.downcase(city_name) end)
+    
+    if is_nil(city) do
+    	{:reply, {:ok, nil}, cities}
+    else
+    	{:reply, Map.fetch(city, "code"), cities}
+    end
+  end
+
+  def handle_call({:getname, city_code}, _from, cities) do
     code = cities
-    |> Enum.find(%{"code" => "No such city"}, fn x -> String.downcase(x["name"]) == String.downcase(city) end)
-    |> Map.get("code")
+    |> Enum.find(fn x -> String.downcase(x["code"]) == String.downcase(city_code) end)
+    |> Map.fetch("name")
 
     {:reply, code, cities}
   end
