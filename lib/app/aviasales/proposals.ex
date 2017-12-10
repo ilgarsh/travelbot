@@ -21,7 +21,7 @@ defmodule Proposal do
 		<> "origin=" <> proposal.origin <> "&" 
 		<> "destination=" <> proposal.destination <> "&" 
 		<> "depart=" <> proposal.depart_date <> "&" 
-		<> "return=" <> proposal.return_date 
+		<> "return=" <> proposal.return_date
 		%Proposal{show_to_affiliates: proposal.show_to_affiliates,
 							trip_class: proposal.trip_class,
 							origin: proposal.origin,
