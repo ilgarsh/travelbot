@@ -13,8 +13,8 @@ defmodule App.Mixfile do
   end
 
   def application do
-    [applications: [:logger, :nadia],
-     mod: {App, []}]
+    [applications: [:logger, :nadia]]
+     #mod: {App, []}]
   end
 
   defp deps do

@@ -1,6 +1,5 @@
 defmodule Proposal do
-
-	@base_url "https://search.aviasales.ru/"
+	@base_url "http://www.trvlbot.me/"
 
 	@derive [Poison.Encoder]
 	defstruct [:show_to_affiliates,
@@ -15,14 +14,12 @@ defmodule Proposal do
 				:distance,
 				:actual,
 				:url]
-
-	def build_aviasales_url(proposal) do
+	def build_aviasales_URL(proposal) do
 		url = @base_url <> "?" 
-		<> "origin_iata=" <> proposal.origin <> "&" 
-		<> "destination_iata=" <> proposal.destination <> "&" 
-		<> "depart_date=" <> proposal.depart_date <> "&" 
-		<> "return_date=" <> proposal.return_date 
-		<> "&adults=1&children=0&infants=0&trip_class=0&with_request=true"
+		<> "origin=" <> proposal.origin <> "&" 
+		<> "destination=" <> proposal.destination <> "&" 
+		<> "depart=" <> proposal.depart_date <> "&" 
+		<> "return=" <> proposal.return_date
 		%Proposal{show_to_affiliates: proposal.show_to_affiliates,
 							trip_class: proposal.trip_class,
 							origin: proposal.origin,

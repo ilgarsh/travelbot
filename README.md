@@ -13,7 +13,7 @@ Another feature of this bot will be a kind of recommender system. Once a day, ea
 | %money%       | Display proposals for which there is enough money |
 | %tag%         | Display proposals for tag |
 | %city%         | Display proposals for city you want to visit |
-| %dd.mm-dd.mm%         | Display proposals for date |
+| %month%         | Display proposals for month |
 | ...        | ... |
 
 ## Technologies
