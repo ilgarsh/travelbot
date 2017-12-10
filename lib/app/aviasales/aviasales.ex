@@ -12,32 +12,21 @@ defmodule Aviasales do
                                         else: "period_type=year&")
       <> if(limit != "", do: "limit=" <> limit <> "&", else: "limit=10&")
       <> if(trip_duration != "", do: "trip_duration=" <> trip_duration <> "&", else: "")
-      <> "token=" <> @token
+      <> "token=" <> @token <> "&"
+      <> "currency=usd"
   end
 
-  def get_top_proposals(origin) do
-    {:ok, response} = build_url(origin, "", "", "", "") |> HTTPoison.get
-    Poison.decode!(response.body, as: %{"data" => [%Proposal{}]})["data"] |>
-    Enum.map(fn prop -> Proposal.build_aviasales_URL(prop) end)
-  end
+  def get_proposals(origin, destination, year_month, money) do
+    year_month = (if year_month == "", do: "", else: year_month <> "-01")
+    limit = (if money != "", do: "", else: "1000")
+    {:ok, response} = build_url(origin, destination, year_month, limit, "") 
+      |> HTTPoison.get
 
-  def get_min_money_proposals(origin, money) do
-    {:ok, response} = build_url(origin, "", "", "1000", "") |> HTTPoison.get
-    Poison.decode!(response.body, as: %{"data" => [%Proposal{}]})["data"] |>
-    Enum.filter(fn prop -> prop.value < money end) |>
-    Enum.map(fn prop -> Proposal.build_aviasales_url(prop) end)
-  end
+    proposals = Poison.decode!(response.body, as: %{"data" => [%Proposal{}]})["data"]
 
-  def get_proposals_to(origin, destination) do
-    {:ok, response} = build_url(origin, destination, "", "", "") |> HTTPoison.get
-    Poison.decode!(response.body, as: %{"data" => [%Proposal{}]})["data"] |>
-    Enum.map(fn prop -> Proposal.build_aviasales_url(prop) end)
-  end
+    if money != "", do: proposals = proposals |> Enum.filter(fn prop -> prop.value < money end)
 
-  def get_proposals_in(origin, month) do
-    {:ok, response} = build_url(origin, "", "2017-" <> month <> "-01", "1", "") |> HTTPoison.get
-    Poison.decode!(response.body, as: %{"data" => [%Proposal{}]})["data"] |>
-    Enum.map(fn prop -> Proposal.build_aviasales_url(prop) end)
+    proposals |> Enum.map(fn prop -> Proposal.build_aviasales_URL(prop) end)
   end
 
 end
