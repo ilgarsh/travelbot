@@ -16,7 +16,8 @@ defmodule Aviasales do
       <> "currency=usd"
   end
 
-  def get_proposals(origin, destination, year_month, money) do
+  def get_proposals(origin, destination, month, money) do
+    year_month = if(month != "", do: month |> convert_month, else: "")
     year_month = (if year_month == "", do: "", else: year_month <> "-01")
     limit = (if money != "", do: "", else: "1000")
     {:ok, response} = build_url(origin, destination, year_month, limit, "") 
@@ -27,6 +28,31 @@ defmodule Aviasales do
     if money != "", do: proposals = proposals |> Enum.filter(fn prop -> prop.value < money end)
 
     proposals |> Enum.map(fn prop -> Proposal.build_aviasales_URL(prop) end)
+  end
+
+  def convert_month(month) do
+    month =
+    case String.downcase(month) do
+      "january" -> 1
+      "february" -> 2
+      "march" -> 3
+        "april" -> 4
+        "may" -> 5
+        "june" -> 6
+        "july" -> 7
+        "august" -> 8
+        "september" -> 9
+        "october" -> 10
+        "november" -> 11
+        "december" -> 12
+    end
+    year = if(month > Date.utc_today().month, do: Date.utc_today().year + 1, else: Date.utc_today().year) |> to_string
+    month = month |> to_string
+    if String.length(month) == 1 do
+      year <> "-0" <> month
+    else
+      year <> "-" <> month
+    end
   end
 
 end

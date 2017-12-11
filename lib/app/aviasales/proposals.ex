@@ -1,5 +1,5 @@
 defmodule Proposal do
-	@base_url "http://www.trvlbot.me/"
+	@base_url "http://trvlbot.herokuapp.com/"
 
 	@derive [Poison.Encoder]
 	defstruct [:show_to_affiliates,

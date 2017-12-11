@@ -32,9 +32,16 @@ defmodule App.Commands do
   command "test" do
     city_code = App.Dialog.get_user_city(update.message.from.id)
     city = city_code |> App.Cities.get_city_name
-    proposals = city_code |> Aviasales.get_top_proposals
+    proposals = city_code |> Aviasales.get_proposals("", "", "50")
     Enum.reduce(proposals, "", fn x, acc -> acc <> "From #{city} to #{App.Cities.get_city_name(x.destination)}\n#{x.depart_date} - #{x.return_date}\nTickets from #{x.value} RUB: #{x.url}\n\n" end)
     |> send_message
+  end
+
+  command "reset" do
+    Logger.log :info, "Command /reset"
+
+    send_message "Let's start over. Where are you?"
+    App.Dialog.set_dialog_progress(update.message.from.id, :city)
   end
 
   # You may split code to other modules using the syntax
@@ -161,23 +168,52 @@ defmodule App.Commands do
     Logger.log :info, "Matched message #{text}\nCurrent dialog progress for user #{user_id}: #{App.Dialog.get_user_progress(user_id)}"
     
     case App.Dialog.get_user_progress(user_id) do
-      :city -> App.Cities.get_city_code(text) 
-               |> (fn x -> 
-                    if is_nil(x) do
-                      send_message("There is no such city, try again")
-                    else
-                      App.Dialog.set_user_city(user_id, x)
-                      App.Dialog.set_dialog_progress(user_id, :price)
-                      send_message("Minimum price?")
-                    end
-                  end).()
-      :price -> if Grouper.is_numeric(text) do
-                  App.Dialog.set_user_price(user_id, text)
-                  App.Dialog.set_dialog_progress(user_id, :month)
-                  send_message("Month?")
-                else
-                  send_message("Incorrect price, try again")
+      :city -> code = App.Cities.get_city_code(text)
+               if is_nil(code) do
+                send_message("There is no such city, try again")
+               else
+                App.Dialog.set_user_city(user_id, code)
+                App.Dialog.set_dialog_progress(user_id, :price)
+                send_message("Price limit? (in USD, if not, say no)")
+               end
+      :price -> cond do
+                  Grouper.is_numeric(text) ->
+                    App.Dialog.set_user_price(user_id, text)
+                    App.Dialog.set_dialog_progress(user_id, :month)
+                    send_message("You have a preferred travel month? (if not, say no)")
+                  String.downcase(text) == "no" ->
+                    App.Dialog.set_dialog_progress(user_id, :month)
+                    send_message("You have a preferred travel month? (if not, say no)")
+                  true ->
+                    send_message("Incorrect price, try again")
                 end
+      :month -> cond do
+                  Grouper.is_month(text) ->
+                    App.Dialog.set_user_month(user_id, text)
+                    App.Dialog.set_dialog_progress(user_id, :destination)
+                    send_message("Any preferred travel destination? (if not, say no)")
+                  String.downcase(text) == "no" ->
+                    App.Dialog.set_dialog_progress(user_id, :destination)
+                    send_message("Any preferred travel destination? (if not, say no)")
+                  true -> 
+                    send_message("There is no such month, try again or say no")
+                end
+      :destination -> code = App.Cities.get_city_code(text)
+                      cond do
+                        is_nil(code) ->
+                          send_message("There is no such city, try again or say no")
+                        String.downcase(text) == "no" ->
+                          App.Dialog.set_dialog_progress(user_id, :tags)
+                          send_message("Any preferred travel destination? (if not, say no)")
+                        true -> 
+                          App.Dialog.set_user_destination(user_id, text)
+                          App.Dialog.set_dialog_progress(user_id, :tags)
+                          send_message("Any preferred travel destination? (if not, say no)")
+                      end
+      :tags -> 
+      :result -> proposals = Aviasales.get_proposals("", "", "50")
+    Enum.reduce(proposals, "", fn x, acc -> acc <> "From #{city} to #{App.Cities.get_city_name(x.destination)}\n#{x.depart_date} - #{x.return_date}\nTickets from #{x.value} RUB: #{x.url}\n\n" end)
+    |> send_message
     end
     # cond do
     #   Grouper.is_numeric(text) ->

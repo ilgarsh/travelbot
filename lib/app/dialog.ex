@@ -23,6 +23,14 @@ defmodule App.Dialog do
   	city
   end
 
+  def get_user_price(user_id) do
+    {:ok, price} = user_id
+    |> get_user_state
+    |> Map.fetch(:price)
+
+    price
+  end
+
   def get_user_state(user_id) do
     case GenServer.call(__MODULE__, user_id) do
     	{:ok, state} -> state
@@ -50,6 +58,10 @@ defmodule App.Dialog do
   	GenServer.cast(__MODULE__, {:setprice, user_id, price})
   end
 
+  def set_user_destination(user_id, desination) do
+    GenServer.cast(__MODULE__, {:setprice, user_id, desination})
+  end
+
   ## Server
 
   def init(:ok) do
@@ -65,7 +77,7 @@ defmodule App.Dialog do
   end
 
   def handle_cast({:add, user_id}, state) do
-  	{:noreply, Map.put_new(state, user_id, %{:dialog => :start, :city => "", :price => 0, :month => "", :tags => []})}
+  	{:noreply, Map.put_new(state, user_id, %{:dialog => :start, :city => "", :price => 0, :month => "", :desination => "", :tags => []})}
   end
 
   def handle_cast({:setcity, user_id, city_code}, state) do
@@ -78,5 +90,9 @@ defmodule App.Dialog do
 
   def handle_cast({:setprice, user_id, price}, state) do
   	{:noreply, Map.update(state, user_id, 0, &(Map.update(&1, :price, 0, fn _x -> price end)))}
+  end
+
+  def handle_cast({:setprice, user_id, desination}, state) do
+    {:noreply, Map.update(state, user_id, 0, &(Map.update(&1, :desination, 0, fn _x -> desination end)))}
   end
 end
