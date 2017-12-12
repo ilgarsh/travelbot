@@ -2,6 +2,7 @@ defmodule App.Commands do
   use App.Router
   use App.Commander
 
+  require Grouper
   alias App.Commands.Outside
 
   # You can create commands in the format `/command` by
@@ -19,6 +20,28 @@ defmodule App.Commands do
     #
     # See also: https://hexdocs.pm/nadia/Nadia.html
     send_message "Hello World!"
+  end
+
+  command "start" do
+    Logger.log :info, "Command /start"
+    send_message "Hello! This is the Travel bot. I'll help you decide where to go.\nTell me, where are you?"
+    App.Dialog.add_user(update.message.from.id)
+    App.Dialog.set_dialog_progress(update.message.from.id, :city)
+  end
+
+  command "test" do
+    city_code = App.Dialog.get_user_city(update.message.from.id)
+    city = city_code |> App.Cities.get_city_name
+    proposals = city_code |> Aviasales.get_proposals("", "", "50")
+    Enum.reduce(proposals, "", fn x, acc -> acc <> "From #{city} to #{App.Cities.get_city_name(x.destination)}\n#{x.depart_date} - #{x.return_date}\nTickets from #{x.value} RUB: #{x.url}\n\n" end)
+    |> send_message
+  end
+
+  command "reset" do
+    Logger.log :info, "Command /reset"
+
+    send_message "Let's start over. Where are you?"
+    App.Dialog.set_dialog_progress(update.message.from.id, :city)
   end
 
   # You may split code to other modules using the syntax
@@ -140,11 +163,65 @@ defmodule App.Commands do
     ]
   end
 
-  # The `message` macro must come at the end since it matches anything.
-  # You may use it as a fallback.
-  message do
-    Logger.log :warn, "Did not match the message"
-
-    send_message "Sorry, I couldn't understand you"
+  message(text) do
+    user_id = update.message.from.id
+    Logger.log :info, "Matched message #{text}\nCurrent dialog progress for user #{user_id}: #{App.Dialog.get_user_progress(user_id)}"
+    
+    case App.Dialog.get_user_progress(user_id) do
+      :city -> code = App.Cities.get_city_code(text)
+               if is_nil(code) do
+                send_message("There is no such city, try again")
+               else
+                App.Dialog.set_user_city(user_id, code)
+                App.Dialog.set_dialog_progress(user_id, :price)
+                send_message("Price limit? (in USD, if not, say no)")
+               end
+      :price -> cond do
+                  Grouper.is_numeric(text) ->
+                    App.Dialog.set_user_price(user_id, text)
+                    App.Dialog.set_dialog_progress(user_id, :month)
+                    send_message("You have a preferred travel month? (if not, say no)")
+                  String.downcase(text) == "no" ->
+                    App.Dialog.set_dialog_progress(user_id, :month)
+                    send_message("You have a preferred travel month? (if not, say no)")
+                  true ->
+                    send_message("Incorrect price, try again")
+                end
+      :month -> cond do
+                  Grouper.is_month(text) ->
+                    App.Dialog.set_user_month(user_id, text)
+                    App.Dialog.set_dialog_progress(user_id, :destination)
+                    send_message("Any preferred travel destination? (if not, say no)")
+                  String.downcase(text) == "no" ->
+                    App.Dialog.set_dialog_progress(user_id, :destination)
+                    send_message("Any preferred travel destination? (if not, say no)")
+                  true -> 
+                    send_message("There is no such month, try again or say no")
+                end
+      :destination -> code = App.Cities.get_city_code(text)
+                      cond do
+                        is_nil(code) ->
+                          send_message("There is no such city, try again or say no")
+                        String.downcase(text) == "no" ->
+                          App.Dialog.set_dialog_progress(user_id, :tags)
+                          send_message("Any preferred travel destination? (if not, say no)")
+                        true -> 
+                          App.Dialog.set_user_destination(user_id, text)
+                          App.Dialog.set_dialog_progress(user_id, :tags)
+                          send_message("Any preferred travel destination? (if not, say no)")
+                      end
+      :tags -> 
+      :result -> proposals = Aviasales.get_proposals("", "", "50")
+    Enum.reduce(proposals, "", fn x, acc -> acc <> "From #{city} to #{App.Cities.get_city_name(x.destination)}\n#{x.depart_date} - #{x.return_date}\nTickets from #{x.value} RUB: #{x.url}\n\n" end)
+    |> send_message
+    end
+    # cond do
+    #   Grouper.is_numeric(text) ->
+    #     send_message "Money"
+    #   Grouper.is_month(text) ->
+    #     send_message "Month"
+    #   true ->
+    #     send_message "poshel naher kozel"
+    # end
   end
 end
