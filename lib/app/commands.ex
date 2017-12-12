@@ -210,18 +210,10 @@ defmodule App.Commands do
                           App.Dialog.set_dialog_progress(user_id, :tags)
                           send_message("Any preferred travel destination? (if not, say no)")
                       end
-      :tags -> 
-      :result -> proposals = Aviasales.get_proposals("", "", "50")
-    Enum.reduce(proposals, "", fn x, acc -> acc <> "From #{city} to #{App.Cities.get_city_name(x.destination)}\n#{x.depart_date} - #{x.return_date}\nTickets from #{x.value} RUB: #{x.url}\n\n" end)
-    |> send_message
-    end
-    # cond do
-    #   Grouper.is_numeric(text) ->
-    #     send_message "Money"
-    #   Grouper.is_month(text) ->
-    #     send_message "Month"
-    #   true ->
-    #     send_message "poshel naher kozel"
-    # end
+      #:tags -> 
+      #:result -> proposals = Aviasales.get_proposals("", "", "50")
+    #Enum.reduce(proposals, "", fn x, acc -> acc <> "From #{city} to #{App.Cities.get_city_name(x.destination)}\n#{x.depart_date} - #{x.return_date}\nTickets from #{x.value} RUB: #{x.url}\n\n" end)
+    #|> send_message
+    #end
   end
 end
