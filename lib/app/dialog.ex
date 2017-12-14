@@ -105,7 +105,7 @@ defmodule App.Dialog do
   end
 
   def handle_cast({:add, user_id}, state) do
-  	{:noreply, Map.put_new(state, user_id, %{:dialog => :start, :city => "", :price => 0, :month => "", :destination => "", :tags => []})}
+  	{:noreply, Map.put_new(state, user_id, %{:dialog => :start, :city => "", :price => "", :month => "", :destination => "", :tags => []})}
   end
 
   def handle_cast({:setcity, user_id, city_code}, state) do
@@ -133,12 +133,18 @@ defmodule App.Dialog do
   def result_proposals(user_id) do
     proposals = Aviasales.get_proposals(get_user_city(user_id), get_user_destination(user_id), get_user_month(user_id), get_user_price(user_id))
     tag_names = Enum.join(get_user_tags(user_id), ", ")
-    query = "
+    IO.inspect tag_names
+    if tag_names != "" do
+      query = "
       SELECT iata
       FROM cities
       WHERE tag_id IN (SELECT id FROM tags WHERE name IN ('" <> tag_names <> "'))"
-    {:ok, result} = Ecto.Adapters.SQL.query(App.Repo, query)
-    cities = Enum.filter(proposals, fn x -> Enum.member?(result.rows, [x.destination]) end)
+      {:ok, result} = Ecto.Adapters.SQL.query(App.Repo, query)
+      iatas = result.rows |> Enum.map(fn x -> List.first(x) end)
+      cities = Enum.filter(proposals, fn x -> Enum.member?(iatas, x.destination) end)
+    else
+      proposals
+    end
   end
 
   #SELECT iata FROM cities WHERE tag_id IN (SELECT id FROM tags WHERE name IN ("beach"))
