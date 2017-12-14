@@ -13,7 +13,7 @@ defmodule App.Mixfile do
   end
 
   def application do
-    [applications: [:logger, :nadia],
+    [#applications: [:logger, :nadia],
      mod: {App, []}]
   end
 
@@ -24,6 +24,8 @@ defmodule App.Mixfile do
       {:httpotion, "~> 3.0.2"},
       {:httpoison, "~> 0.13"},
       {:poison, "~> 3.1"},
+      {:postgrex, ">= 0.0.0"},
+      {:ecto, "~> 2.1"}
     ]
   end
 

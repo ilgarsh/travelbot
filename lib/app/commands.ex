@@ -2,6 +2,8 @@ defmodule App.Commands do
   use App.Router
   use App.Commander
 
+  require Ecto.Query
+
   require Grouper
   alias App.Commands.Outside
 
@@ -35,6 +37,10 @@ defmodule App.Commands do
     proposals = city_code |> Aviasales.get_proposals("", "", "50")
     Enum.reduce(proposals, "", fn x, acc -> acc <> "From #{city} to #{App.Cities.get_city_name(x.destination)}\n#{x.depart_date} - #{x.return_date}\nTickets from #{x.value} RUB: #{x.url}\n\n" end)
     |> send_message
+  end
+
+  command "db" do
+    (Ecto.Query.from w in "tags", select: w.name) |> App.Repo.all |> Enum.reduce("", fn x, acc -> "#{acc}#{x}\t" end) |> send_message
   end
 
   command "reset" do
@@ -200,20 +206,34 @@ defmodule App.Commands do
                 end
       :destination -> code = App.Cities.get_city_code(text)
                       cond do
-                        is_nil(code) ->
-                          send_message("There is no such city, try again or say no")
                         String.downcase(text) == "no" ->
                           App.Dialog.set_dialog_progress(user_id, :tags)
-                          send_message("Any preferred travel destination? (if not, say no)")
+                          tags = (Ecto.Query.from w in "tags", select: w.name) |> App.Repo.all
+                          send_message("Any preferred tags?\nAvaliable tags:\n#{tags |> Enum.join(", ")}\nIf not, say no")
+                        is_nil(code) ->
+                          send_message("There is no such city, try again or say no")
                         true -> 
                           App.Dialog.set_user_destination(user_id, text)
                           App.Dialog.set_dialog_progress(user_id, :tags)
-                          send_message("Any preferred travel destination? (if not, say no)")
+                          tags = (Ecto.Query.from w in "tags", select: w.name) |> App.Repo.all
+                          send_message("Any preferred tags?\nAvaliable tags:\n#{tags |> Enum.join(", ")}\nIf not, say no")
                       end
-      #:tags -> 
+      :tags -> user_tags = String.split(String.downcase(text), ~r{[(, ), ]})
+               cond do
+                 user_tags -- ((Ecto.Query.from w in "tags", select: w.name) |> App.Repo.all) == [] -> 
+                   App.Dialog.set_user_tags(user_id, user_tags)
+                   Enum.reduce(App.Dialog.result_proposals(user_id), "", fn x, acc -> acc <> "From #{App.Dialog.get_user_city(user_id) |> App.Cities.get_city_name} to #{App.Cities.get_city_name(x.destination)}\n#{x.depart_date} - #{x.return_date}\nTickets from #{x.value} USD: #{x.url}\n\n" end)
+                   |> send_message
+                 String.downcase(text) == "no" ->
+                   Enum.reduce(App.Dialog.result_proposals(user_id), "", fn x, acc -> acc <> "From #{App.Dialog.get_user_city(user_id) |> App.Cities.get_city_name} to #{App.Cities.get_city_name(x.destination)}\n#{x.depart_date} - #{x.return_date}\nTickets from #{x.value} USD: #{x.url}\n\n" end)
+                   |> send_message
+                 true ->
+                   send_message("There are no such tags, try again or say no")
+               end
+
       #:result -> proposals = Aviasales.get_proposals("", "", "50")
     #Enum.reduce(proposals, "", fn x, acc -> acc <> "From #{city} to #{App.Cities.get_city_name(x.destination)}\n#{x.depart_date} - #{x.return_date}\nTickets from #{x.value} RUB: #{x.url}\n\n" end)
     #|> send_message
-    #end
+    end
   end
 end
