@@ -23,6 +23,14 @@ defmodule App.Dialog do
   	city
   end
 
+  def get_user_month(user_id) do
+    {:ok, month} = user_id
+    |> get_user_state
+    |> Map.fetch(:month)
+
+    month
+  end
+
   def get_user_price(user_id) do
     {:ok, price} = user_id
     |> get_user_state
@@ -31,11 +39,27 @@ defmodule App.Dialog do
     price
   end
 
+  def get_user_destination(user_id) do
+    {:ok, destination} = user_id
+    |> get_user_state
+    |> Map.fetch(:destination)
+
+    destination
+  end
+
   def get_user_state(user_id) do
     case GenServer.call(__MODULE__, user_id) do
     	{:ok, state} -> state
     	_ -> "No state for this user"
     end
+  end
+
+  def get_user_tags(user_id) do
+    {:ok, tags} = user_id
+    |> get_user_state
+    |> Map.fetch(:tags)
+
+    tags
   end
 
   def add_user(user_id) do
@@ -59,7 +83,11 @@ defmodule App.Dialog do
   end
 
   def set_user_destination(user_id, desination) do
-    GenServer.cast(__MODULE__, {:setprice, user_id, desination})
+    GenServer.cast(__MODULE__, {:setdestination, user_id, desination})
+  end
+
+  def set_user_tags(user_id, tags) do
+    GenServer.cast(__MODULE__, {:settags, user_id, tags})
   end
 
   ## Server
@@ -77,7 +105,7 @@ defmodule App.Dialog do
   end
 
   def handle_cast({:add, user_id}, state) do
-  	{:noreply, Map.put_new(state, user_id, %{:dialog => :start, :city => "", :price => 0, :month => "", :desination => "", :tags => []})}
+  	{:noreply, Map.put_new(state, user_id, %{:dialog => :start, :city => "", :price => 0, :month => "", :destination => "", :tags => []})}
   end
 
   def handle_cast({:setcity, user_id, city_code}, state) do
@@ -92,7 +120,26 @@ defmodule App.Dialog do
   	{:noreply, Map.update(state, user_id, 0, &(Map.update(&1, :price, 0, fn _x -> price end)))}
   end
 
-  def handle_cast({:setprice, user_id, desination}, state) do
+  def handle_cast({:setdestination, user_id, desination}, state) do
     {:noreply, Map.update(state, user_id, 0, &(Map.update(&1, :desination, 0, fn _x -> desination end)))}
   end
+
+  def handle_cast({:settags, user_id, tags}, state) do
+    {:noreply, Map.update(state, user_id, 0, &(Map.update(&1, :tags, 0, fn _x -> tags end)))}
+  end
+
+  ## Helpers
+
+  def result_proposals(user_id) do
+    proposals = Aviasales.get_proposals(get_user_city(user_id), get_user_destination(user_id), get_user_month(user_id), get_user_price(user_id))
+    tag_names = Enum.join(get_user_tags(user_id), ", ")
+    query = "
+      SELECT iata
+      FROM cities
+      WHERE tag_id IN (SELECT id FROM tags WHERE name IN ('" <> tag_names <> "'))"
+    {:ok, result} = Ecto.Adapters.SQL.query(App.Repo, query)
+    cities = Enum.filter(proposals, fn x -> Enum.member?(result.rows, [x.destination]) end)
+  end
+
+  #SELECT iata FROM cities WHERE tag_id IN (SELECT id FROM tags WHERE name IN ("beach"))
 end

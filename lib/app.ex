@@ -21,6 +21,7 @@ defmodule App do
       worker(App.Dialog, []),
       worker(App.Poller, []),
       worker(App.Matcher, []),
+      supervisor(App.Repo, []),
     ]
 
     opts = [strategy: :one_for_one, name: App.Supervisor]
