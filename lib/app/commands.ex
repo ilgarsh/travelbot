@@ -26,18 +26,18 @@ defmodule App.Commands do
 
   command "start" do
     Logger.log :info, "Command /start"
-    send_message "Hello! This is the Travel bot. I'll help you decide where to go.\nTell me, where are you?"
+    send_message "Hello! This is the Travel bot. I'll help you decide where to go. (Command /reset will return you to this point of dialog)\nTell me, where are you?"
     App.Dialog.add_user(update.message.from.id)
     App.Dialog.set_dialog_progress(update.message.from.id, :city)
   end
 
-  command "test" do
-    city_code = App.Dialog.get_user_city(update.message.from.id)
-    city = city_code |> App.Cities.get_city_name
-    proposals = city_code |> Aviasales.get_proposals("", "", "50")
-    Enum.reduce(proposals, "", fn x, acc -> acc <> "From #{city} to #{App.Cities.get_city_name(x.destination)}\n#{x.depart_date} - #{x.return_date}\nTickets from #{x.value} RUB: #{x.url}\n\n" end)
-    |> send_message
-  end
+  # command "test" do
+  #   city_code = App.Dialog.get_user_city(update.message.from.id)
+  #   city = city_code |> App.Cities.get_city_name
+  #   #proposals = city_code |> Aviasales.get_proposals("", "", "50")
+  #   Enum.reduce(proposals, "", fn x, acc -> acc <> "From #{city} to #{App.Cities.get_city_name(x.destination)}\n#{x.depart_date} - #{x.return_date}\nTickets from #{x.value} RUB: #{x.url}\n\n" end)
+  #   |> send_message
+  # end
 
   command "db" do
     (Ecto.Query.from w in "tags", select: w.name) |> App.Repo.all |> Enum.reduce("", fn x, acc -> "#{acc}#{x}\t" end) |> send_message
@@ -48,6 +48,23 @@ defmodule App.Commands do
 
     send_message "Let's start over. Where are you?"
     App.Dialog.set_dialog_progress(update.message.from.id, :city)
+  end
+
+  command "recommend" do
+    Logger.log :info, "Command /recommend"
+
+    user_id = update.message.from.id
+    tag = App.Tags.get_top_tag(user_id)
+    query = "
+      SELECT *
+      FROM cities
+      WHERE tag_id IN (SELECT id FROM tags WHERE name IN ('" <> tag <> "'))"
+      {:ok, result} = Ecto.Adapters.SQL.query(App.Repo, query)
+      best_cities = result.rows |> Enum.sort_by(&Enum.at(&1, 2), &>=/2) |> Enum.take(2)
+      user_city = App.Dialog.get_user_city(user_id)
+      proposals = Enum.take(Aviasales.get_proposals(user_city, Enum.at(Enum.at(best_cities, 0), 0), "", "", user_id), 3) ++ Enum.take(Aviasales.get_proposals(user_city, Enum.at(Enum.at(best_cities, 1), 0), "", "", user_id), 2)
+      Enum.reduce(proposals, "You might like these proposals:\n", fn x, acc -> acc <> "From #{user_city |> App.Cities.get_city_name} to #{App.Cities.get_city_name(x.destination)}\n#{x.depart_date} - #{x.return_date}\nTickets from #{x.value} USD: #{x.url}\n\n" end)
+                   |> send_message
   end
 
   # You may split code to other modules using the syntax
@@ -218,15 +235,16 @@ defmodule App.Commands do
                           tags = (Ecto.Query.from w in "tags", select: w.name) |> App.Repo.all
                           send_message("Any preferred tags?\nAvaliable tags:\n#{tags |> Enum.join(", ")}\nIf not, say no")
                       end
-      :tags -> user_tags = String.split(String.downcase(text), ~r{[(, ), ]})
+      :tags -> user_tags = String.split(String.downcase(text), ~r{(, )| })
                cond do
                 String.downcase(text) == "no" ->
-                   Enum.each(App.Dialog.result_proposals(user_id), fn x -> "From #{App.Dialog.get_user_city(user_id) |> App.Cities.get_city_name} to #{App.Cities.get_city_name(x.destination)}\n#{x.depart_date} - #{x.return_date}\nTickets from #{x.value} USD: #{x.url}\n\n" |>
-                    send_message end)
+                   Enum.reduce(App.Dialog.result_proposals(user_id), "Best offers for your parameters:\n", fn x, acc -> acc <> "From #{App.Dialog.get_user_city(user_id) |> App.Cities.get_city_name} to #{App.Cities.get_city_name(x.destination)}\n#{x.depart_date} - #{x.return_date}\nTickets from #{x.value} USD: #{x.url}\n\n" end)
+                   |> send_message
                  user_tags -- ((Ecto.Query.from w in "tags", select: w.name) |> App.Repo.all) == [] -> 
                    App.Dialog.set_user_tags(user_id, user_tags)
-                   Enum.each(App.Dialog.result_proposals(user_id), fn x -> "From #{App.Dialog.get_user_city(user_id) |> App.Cities.get_city_name} to #{App.Cities.get_city_name(x.destination)}\n#{x.depart_date} - #{x.return_date}\nTickets from #{x.value} USD: #{x.url}\n\n" |>
-                    send_message end)
+                   App.Tags.update_user_tags(user_id, user_tags)
+                   Enum.reduce(App.Dialog.result_proposals(user_id), "Best offers for your parameters:\n", fn x, acc -> acc <> "From #{App.Dialog.get_user_city(user_id) |> App.Cities.get_city_name} to #{App.Cities.get_city_name(x.destination)}\n#{x.depart_date} - #{x.return_date}\nTickets from #{x.value} USD: #{x.url}\n\n" end)
+                   |> send_message
                  true ->
                    send_message("There are no such tags, try again or say no")
                end

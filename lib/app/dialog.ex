@@ -131,9 +131,8 @@ defmodule App.Dialog do
   ## Helpers
 
   def result_proposals(user_id) do
-    proposals = Aviasales.get_proposals(get_user_city(user_id), get_user_destination(user_id), get_user_month(user_id), get_user_price(user_id))
-    tag_names = Enum.join(get_user_tags(user_id), ", ")
-    IO.inspect tag_names
+    proposals = Aviasales.get_proposals(get_user_city(user_id), get_user_destination(user_id), get_user_month(user_id), get_user_price(user_id), user_id)
+    tag_names = Enum.join(get_user_tags(user_id), "', '")
     if tag_names != "" do
       query = "
       SELECT iata
@@ -141,7 +140,7 @@ defmodule App.Dialog do
       WHERE tag_id IN (SELECT id FROM tags WHERE name IN ('" <> tag_names <> "'))"
       {:ok, result} = Ecto.Adapters.SQL.query(App.Repo, query)
       iatas = result.rows |> Enum.map(fn x -> List.first(x) end)
-      cities = Enum.filter(proposals, fn x -> Enum.member?(iatas, x.destination) end)
+      Enum.filter(proposals, fn x -> Enum.member?(iatas, x.destination) end) |> Enum.take(10)
     else
       proposals
     end

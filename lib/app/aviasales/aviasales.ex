@@ -10,22 +10,23 @@ defmodule Aviasales do
       <> if(destination != "", do: "destination=" <> destination <> "&", else: "")
       <> if(beginning_of_period != "", do: "beginning_of_period=" <> beginning_of_period <> "&period_type=month&",
                                         else: "period_type=year&")
-      <> if(limit != "", do: "limit=" <> limit <> "&", else: "limit=10&")
+      <> if(limit != "", do: "limit=" <> limit <> "&", else: "limit=1000&")
       <> if(trip_duration != "", do: "trip_duration=" <> trip_duration <> "&", else: "")
       <> "token=" <> @token <> "&"
       <> "currency=usd"
   end
 
-  def get_proposals(origin, destination, month, money) do
+  def get_proposals(origin, destination, month, money, user_id) do
     year_month = if(month != "", do: month |> convert_month, else: "")
     year_month = (if year_month == "", do: "", else: year_month <> "-01")
     limit = (if money != "", do: "", else: "1000")
+    [origin, destination, year_month, limit] |> IO.inspect
     {:ok, response} = build_url(origin, destination, year_month, limit, "") 
       |> HTTPoison.get
 
     proposals = Poison.decode!(response.body, as: %{"data" => [%Proposal{}]})["data"]
 
-    if money != "", do: proposals = proposals |> Enum.filter(fn prop -> prop.value < money end)
+    if money != "", do: proposals = proposals |> Enum.filter(fn prop -> prop.value < String.to_integer(money) end)
 
     proposals |> Enum.map(fn prop -> Proposal.build_aviasales_URL(prop) end)
   end

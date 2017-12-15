@@ -21,6 +21,7 @@ defmodule App do
       worker(App.Dialog, []),
       worker(App.Poller, []),
       worker(App.Matcher, []),
+      worker(App.Tags, []),
       supervisor(App.Repo, []),
     ]
 
