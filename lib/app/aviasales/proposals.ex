@@ -14,12 +14,12 @@ defmodule Proposal do
 				:distance,
 				:actual,
 				:url]
-	def build_aviasales_URL(proposal) do
+	def build_aviasales_URL(proposal, tag_id) do
 		url = @base_url <> "?" 
 		<> "origin=" <> proposal.origin <> "&" 
 		<> "destination=" <> proposal.destination <> "&" 
 		<> "depart=" <> proposal.depart_date <> "&" 
-		<> "return=" <> proposal.return_date# <> "tag_id=#{Enum.at(Enum.at(id.rows, 0), 0)}"
+		<> "return=" <> proposal.return_date <> "&tag_id=#{tag_id}"
 		%Proposal{show_to_affiliates: proposal.show_to_affiliates,
 							trip_class: proposal.trip_class,
 							origin: proposal.origin,

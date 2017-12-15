@@ -130,8 +130,9 @@ defmodule App.Dialog do
 
   ## Helpers
 
-  def result_proposals(user_id) do
-    proposals = Aviasales.get_proposals(get_user_city(user_id), get_user_destination(user_id), get_user_month(user_id), get_user_price(user_id), user_id)
+  def result_proposals(user_id, tag_name) do
+    tag_name |> IO.inspect
+    proposals = Aviasales.get_proposals(get_user_city(user_id), get_user_destination(user_id), get_user_month(user_id), get_user_price(user_id), tag_name |> App.Tagids.get_id)
     tag_names = Enum.join(get_user_tags(user_id), "', '")
     if tag_names != "" do
       query = "

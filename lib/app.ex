@@ -17,6 +17,7 @@ defmodule App do
     import Supervisor.Spec, warn: false
 
     children = [
+      worker(App.Tagids, []),
       worker(App.Cities, []),
       worker(App.Dialog, []),
       worker(App.Poller, []),

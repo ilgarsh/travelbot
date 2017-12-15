@@ -16,11 +16,11 @@ defmodule Aviasales do
       <> "currency=usd"
   end
 
-  def get_proposals(origin, destination, month, money, user_id) do
+  def get_proposals(origin, destination, month, money, tag_id) do
     year_month = if(month != "", do: month |> convert_month, else: "")
     year_month = (if year_month == "", do: "", else: year_month <> "-01")
     limit = (if money != "", do: "", else: "1000")
-    [origin, destination, year_month, limit] |> IO.inspect
+    [origin, destination, year_month, limit]
     {:ok, response} = build_url(origin, destination, year_month, limit, "") 
       |> HTTPoison.get
 
@@ -28,7 +28,7 @@ defmodule Aviasales do
 
     if money != "", do: proposals = proposals |> Enum.filter(fn prop -> prop.value < String.to_integer(money) end)
 
-    proposals |> Enum.map(fn prop -> Proposal.build_aviasales_URL(prop) end)
+    proposals |> Enum.map(fn prop -> Proposal.build_aviasales_URL(prop, tag_id) end)
   end
 
   def convert_month(month) do
